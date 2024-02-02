@@ -26,7 +26,7 @@ classifiers = [
 ]
 dynamic = ["version"]
 
-[project.scripts]
+[project.gui-scripts]
 bilaga = "bilaga.__main__:main"
 
 [tool.setuptools_scm]

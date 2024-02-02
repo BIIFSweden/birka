@@ -1,0 +1,45 @@
+[build-system]
+requires = ["setuptools>=64", "setuptools_scm>=8"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "bilaga"
+description = "A tool for packaging bioimage datasets"
+readme = {file = "README.txt", content-type = "text/markdown"}
+authors = [{name = "Jonas Windhager", email = "jonas@windhager.io"}]
+license = {file = "LICENSE"}
+requires-python = ">=3.10,<3.12"
+dependencies = [
+    "aicsimageio[all]",
+    "aicspylibczi",
+    "fsspec",
+    "pydantic",
+    "qtpy",
+    "readlif",
+]
+classifiers = [
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: MacOS",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX :: Linux",
+]
+dynamic = ["version"]
+
+[project.scripts]
+bilaga = "bilaga.__main__:main"
+
+[tool.setuptools_scm]
+
+[tool.mypy]
+always_false = [
+    "PYQT5",
+    "PYSIDE2",
+    "PYQT6",
+]
+always_true = [
+    "PYSIDE6",
+]
+
+[tool.ruff]
+extend-select = ["I"]

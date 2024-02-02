@@ -1,0 +1,16 @@
+name: bilaga
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - bioformats_jar
+  - pip
+  - python>=3.10,<3.12
+  - pyside6
+  - pip:
+      - aicsimageio[all]
+      - aicspylibczi
+      - fsspec
+      - pydantic
+      - qtpy
+      - readlif

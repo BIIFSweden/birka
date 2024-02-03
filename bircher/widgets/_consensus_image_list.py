@@ -10,26 +10,26 @@ from ..models import Image
 class ConsensusImageList(MutableSequence[Image]):
     @dataclass(frozen=True)
     class Consensus:
-        n_timepoints: int
-        n_channels: int
-        is_3D: bool
         dtype: str
+        is_timeseries: bool
+        is_zstack: bool
+        n_channels: int
         dimension_order: str
-        channel_names: list[str]
         pixel_size_x: float | None
         pixel_size_y: float | None
         pixel_size_z: float | None
+        channel_names: list[str]
 
     _DEFAULT_CONSENSUS = Consensus(
-        n_timepoints=1,
-        n_channels=1,
-        is_3D=False,
         dtype="uint16",
+        is_timeseries=False,
+        is_zstack=False,
+        n_channels=1,
         dimension_order="TCZYX",
-        channel_names=[],
         pixel_size_x=None,
         pixel_size_y=None,
         pixel_size_z=None,
+        channel_names=[],
     )
 
     def __init__(self, images: Iterable[Image] | None = None) -> None:
@@ -124,15 +124,15 @@ class ConsensusImageList(MutableSequence[Image]):
     def _update_consensus(self) -> None:
         if self._images:
             new_consensus = ConsensusImageList.Consensus(
-                n_timepoints=self._find_consensus(lambda img: img.n_timepoints),
-                n_channels=self._find_consensus(lambda img: img.n_channels),
-                is_3D=self._find_consensus(lambda img: img.size_z_px > 1),
                 dtype=self._find_consensus(lambda img: img.dtype),
+                is_timeseries=self._find_consensus(lambda img: img.is_timeseries),
+                is_zstack=self._find_consensus(lambda img: img.is_zstack),
+                n_channels=self._find_consensus(lambda img: img.n_channels),
                 dimension_order=self._find_consensus(lambda img: img.dimension_order),
-                channel_names=self._find_consensus(lambda img: img.channel_names),
                 pixel_size_x=self._find_consensus(lambda img: img.pixel_size_x),
                 pixel_size_y=self._find_consensus(lambda img: img.pixel_size_y),
                 pixel_size_z=self._find_consensus(lambda img: img.pixel_size_z),
+                channel_names=self._find_consensus(lambda img: img.channel_names),
             )
         else:
             new_consensus = self._DEFAULT_CONSENSUS

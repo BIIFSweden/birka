@@ -47,7 +47,9 @@ class ImageTableModel(QAbstractTableModel):
             ImageTableModel.Column(
                 header="Timepoints",
                 selector=lambda img: img.n_timepoints,
-                validator=lambda img: img.n_timepoints == images.consensus.n_timepoints,
+                validator=lambda img: (
+                    img.is_timeseries == images.consensus.is_timeseries
+                ),
             ),
             ImageTableModel.Column(
                 header="Channels",
@@ -65,7 +67,7 @@ class ImageTableModel(QAbstractTableModel):
             ImageTableModel.Column(
                 header="Depth [px]",
                 selector=lambda img: img.size_z_px,
-                validator=lambda img: (img.size_z_px > 1) == images.consensus.is_3D,
+                validator=lambda img: img.is_zstack == images.consensus.is_zstack,
             ),
             ImageTableModel.Column(
                 header="Dimension order",
@@ -93,7 +95,8 @@ class ImageTableModel(QAbstractTableModel):
                 header="Channel names",
                 selector=lambda img: ", ".join(img.channel_names),
                 validator=(
-                    lambda img: img.channel_names == images.consensus.channel_names
+                    lambda img: tuple(img.channel_names)
+                    == tuple(images.consensus.channel_names)
                 ),
             ),
         ]

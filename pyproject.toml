@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "bircher"
-description = "A tool for bioimage validation and packaging"
+description = "A tool for bioimage data validation and packaging"
 readme = {file = "README.txt", content-type = "text/markdown"}
 authors = [{name = "Jonas Windhager", email = "jonas@windhager.io"}]
 license = {file = "LICENSE"}

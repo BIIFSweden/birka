@@ -1,6 +1,7 @@
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
+from re import Pattern
 from typing import Any
 
 from qtpy.QtCore import (  # type: ignore
@@ -30,10 +31,18 @@ class ImageTableModel(QAbstractTableModel):
     ) -> None:
         super().__init__(parent)
         self._images = images
+        self._file_name_pattern: Pattern[str] | None = None
         self._columns: list[ImageTableModel.Column] = [
             ImageTableModel.Column(
                 header="File",
                 selector=lambda img: Path(img.file).name,
+                validator=(
+                    lambda img: bool(
+                        self._file_name_pattern.fullmatch(Path(img.file).name)
+                    )
+                    if self._file_name_pattern is not None
+                    else True
+                ),
             ),
             ImageTableModel.Column(
                 header="Data type",
@@ -148,3 +157,8 @@ class ImageTableModel(QAbstractTableModel):
         ):
             return self._columns[section].header
         return None
+
+    def set_file_name_pattern(self, pattern: Pattern[str] | None) -> None:
+        self._file_name_pattern = pattern
+        col = next(i for i, c in enumerate(self._columns) if c.header == "File")
+        self.dataChanged.emit(self.index(0, col), self.index(self.rowCount() - 1, col))

@@ -6,11 +6,11 @@ dependencies:
   - bioformats_jar
   - pip
   - python>=3.10,<3.12
-  - pyside6
   - pip:
       - aicsimageio[all]
       - aicspylibczi
       - fsspec
       - pydantic
+      - pyside6-essentials
       - qtpy
       - readlif

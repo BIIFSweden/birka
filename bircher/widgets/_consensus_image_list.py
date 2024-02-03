@@ -10,20 +10,33 @@ from ..models import Image
 class ConsensusImageList(MutableSequence[Image]):
     @dataclass(frozen=True)
     class Consensus:
-        n_timepoints: int | None = None
-        n_channels: int | None = None
-        dtype: str | None = None
-        dimension_order: str | None = None
-        channel_names: list[str] | None = None
-        pixel_size_x: float | None = None
-        pixel_size_y: float | None = None
-        pixel_size_z: float | None = None
+        n_timepoints: int
+        n_channels: int
+        is_3D: bool
+        dtype: str
+        dimension_order: str
+        channel_names: list[str]
+        pixel_size_x: float | None
+        pixel_size_y: float | None
+        pixel_size_z: float | None
+
+    _DEFAULT_CONSENSUS = Consensus(
+        n_timepoints=1,
+        n_channels=1,
+        is_3D=False,
+        dtype="uint16",
+        dimension_order="TCZYX",
+        channel_names=[],
+        pixel_size_x=None,
+        pixel_size_y=None,
+        pixel_size_z=None,
+    )
 
     def __init__(self, images: Iterable[Image] | None = None) -> None:
         super().__init__()
         self._model: QAbstractItemModel | None = None
         self._images: list[Image] = list(images) if images is not None else []
-        self._consensus = ConsensusImageList.Consensus()
+        self._consensus = self._DEFAULT_CONSENSUS
         self._update_consensus()
 
     @overload
@@ -113,6 +126,7 @@ class ConsensusImageList(MutableSequence[Image]):
             new_consensus = ConsensusImageList.Consensus(
                 n_timepoints=self._find_consensus(lambda img: img.n_timepoints),
                 n_channels=self._find_consensus(lambda img: img.n_channels),
+                is_3D=self._find_consensus(lambda img: img.size_z_px > 1),
                 dtype=self._find_consensus(lambda img: img.dtype),
                 dimension_order=self._find_consensus(lambda img: img.dimension_order),
                 channel_names=self._find_consensus(lambda img: img.channel_names),
@@ -121,7 +135,7 @@ class ConsensusImageList(MutableSequence[Image]):
                 pixel_size_z=self._find_consensus(lambda img: img.pixel_size_z),
             )
         else:
-            new_consensus = ConsensusImageList.Consensus()
+            new_consensus = self._DEFAULT_CONSENSUS
         if new_consensus != self._consensus:
             if self._model is not None:
                 self._model.beginResetModel()

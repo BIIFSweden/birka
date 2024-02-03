@@ -65,6 +65,7 @@ class ImageTableModel(QAbstractTableModel):
             ImageTableModel.Column(
                 header="Depth [px]",
                 selector=lambda img: img.size_z_px,
+                validator=lambda img: (img.size_z_px > 1) == images.consensus.is_3D,
             ),
             ImageTableModel.Column(
                 header="Dimension order",

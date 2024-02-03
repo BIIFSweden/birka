@@ -1,3 +1,5 @@
-# bilaga
+# bircher
 
-*Bilaga* (Swedish for attachment, appendix, supplement) is a tool for packaging bioimage datasets
+*The **B**io**I**mage A**rch**iv**er***
+
+Bircher is a tool for bioimage validation and packaging

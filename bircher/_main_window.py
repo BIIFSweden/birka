@@ -7,7 +7,7 @@ class MainWindow(QMainWindow):
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.setGeometry(100, 100, 800, 600)
-        self.setWindowTitle("Bilaga")
+        self.setWindowTitle("Bircher")
         self._images = ImageList()
         self._image_table_model = ImageTableModel(self._images)
         self._images.set_model(self._image_table_model)

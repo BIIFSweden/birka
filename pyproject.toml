@@ -3,8 +3,8 @@ requires = ["setuptools>=64", "setuptools_scm>=8"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "bilaga"
-description = "A tool for packaging bioimage datasets"
+name = "bircher"
+description = "A tool for bioimage validation and packaging"
 readme = {file = "README.txt", content-type = "text/markdown"}
 authors = [{name = "Jonas Windhager", email = "jonas@windhager.io"}]
 license = {file = "LICENSE"}
@@ -27,7 +27,7 @@ classifiers = [
 dynamic = ["version"]
 
 [project.gui-scripts]
-bilaga = "bilaga.__main__:main"
+bircher = "bircher.__main__:main"
 
 [tool.setuptools_scm]
 

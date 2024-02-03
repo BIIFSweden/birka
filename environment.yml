@@ -1,4 +1,4 @@
-name: bilaga
+name: bircher
 channels:
   - conda-forge
   - defaults

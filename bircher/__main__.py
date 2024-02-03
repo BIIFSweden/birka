@@ -1,6 +1,6 @@
 import sys
 
-from bilaga import Application
+from bircher import Application
 
 
 def main():

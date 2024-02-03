@@ -37,6 +37,7 @@ class MainWindow(QMainWindow):
         )
         self._regex_line_edit.textChanged.connect(self._on_regex_line_edit_text_changed)
         regex_delete_widget_layout.addWidget(self._regex_line_edit)
+        regex_delete_widget_layout.addStretch()
         self._delete_push_button = QPushButton("Delete selected rows")
         self._delete_push_button.setEnabled(False)
         self._delete_push_button.clicked.connect(self._on_delete_push_button_clicked)

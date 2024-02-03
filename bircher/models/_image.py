@@ -1,7 +1,8 @@
-from pydantic import BaseModel
+from dataclasses import dataclass
 
 
-class Image(BaseModel):
+@dataclass(frozen=True)
+class Image:
     file: str
     scenes: list[str]
     n_timepoints: int

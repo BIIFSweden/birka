@@ -6,13 +6,15 @@ from qtpy.QtGui import QDragEnterEvent, QDragMoveEvent, QDropEvent
 from qtpy.QtWidgets import QTableView, QWidget
 
 from ..utils import can_load_image, load_image
-from ._image_list import ImageList
+from ._consensus_image_list import ConsensusImageList
 
 log = logging.getLogger(__name__)
 
 
 class ImageTableView(QTableView):
-    def __init__(self, images: ImageList, parent: QWidget | None = None) -> None:
+    def __init__(
+        self, images: ConsensusImageList, parent: QWidget | None = None
+    ) -> None:
         super().__init__(parent)
         self._images = images
         self.setAcceptDrops(True)

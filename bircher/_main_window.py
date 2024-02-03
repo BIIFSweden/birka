@@ -1,6 +1,6 @@
 from qtpy.QtWidgets import QMainWindow, QWidget
 
-from .widgets import ImageList, ImageTableModel, ImageTableView
+from .widgets import ConsensusImageList, ImageTableModel, ImageTableView
 
 
 class MainWindow(QMainWindow):
@@ -8,7 +8,7 @@ class MainWindow(QMainWindow):
         super().__init__(parent)
         self.setGeometry(100, 100, 800, 600)
         self.setWindowTitle("Bircher")
-        self._images = ImageList()
+        self._images = ConsensusImageList()
         self._image_table_model = ImageTableModel(self._images)
         self._images.set_model(self._image_table_model)
         self._image_table_view = ImageTableView(self._images)

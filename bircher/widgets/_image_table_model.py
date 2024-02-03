@@ -1,4 +1,4 @@
-from collections.abc import Callable, Sequence
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -10,35 +10,92 @@ from qtpy.QtCore import (  # type: ignore
     QPersistentModelIndex,
     Qt,
 )
+from qtpy.QtGui import QColor
 
 from ..models import Image
+from ._consensus_image_list import ConsensusImageList
 
 
 class ImageTableModel(QAbstractTableModel):
-    @dataclass
+    INVALID_COLOR = Qt.GlobalColor.red
+
+    @dataclass(frozen=True)
     class Column:
-        name: str
-        getter: Callable[[Image], Any]
+        header: str
+        selector: Callable[[Image], Any]
+        validator: Callable[[Image], bool] | None = None
 
-    _COLUMNS: list[Column] = [
-        Column("File", lambda image: Path(image.file).name),
-        Column("Data type", lambda image: image.dtype),
-        Column("Scenes", lambda image: len(image.scenes)),
-        Column("Timepoints", lambda image: image.n_timepoints),
-        Column("Channels", lambda image: image.n_channels),
-        Column("Width [px]", lambda image: image.size_x_px),
-        Column("Height [px]", lambda image: image.size_y_px),
-        Column("Depth [px]", lambda image: image.size_z_px),
-        Column("Dimension order", lambda image: image.dimension_order),
-        Column("Pixel size (X)", lambda image: image.pixel_size_x or "unknown"),
-        Column("Pixel size (Y)", lambda image: image.pixel_size_y or "unknown"),
-        Column("Pixel size (Z)", lambda image: image.pixel_size_z or "unknown"),
-        Column("Channel names", lambda image: ", ".join(image.channel_names)),
-    ]
-
-    def __init__(self, images: Sequence[Image], parent: QObject | None = None) -> None:
+    def __init__(
+        self, images: ConsensusImageList, parent: QObject | None = None
+    ) -> None:
         super().__init__(parent)
-        self._images: Sequence[Image] = images
+        self._images = images
+        self._columns: list[ImageTableModel.Column] = [
+            ImageTableModel.Column(
+                header="File",
+                selector=lambda img: Path(img.file).name,
+            ),
+            ImageTableModel.Column(
+                header="Data type",
+                selector=lambda img: img.dtype,
+                validator=lambda img: img.dtype == images.consensus.dtype,
+            ),
+            ImageTableModel.Column(
+                header="Scenes",
+                selector=lambda img: len(img.scenes),
+            ),
+            ImageTableModel.Column(
+                header="Timepoints",
+                selector=lambda img: img.n_timepoints,
+                validator=lambda img: img.n_timepoints == images.consensus.n_timepoints,
+            ),
+            ImageTableModel.Column(
+                header="Channels",
+                selector=lambda img: img.n_channels,
+                validator=lambda img: img.n_channels == images.consensus.n_channels,
+            ),
+            ImageTableModel.Column(
+                header="Width [px]",
+                selector=lambda img: img.size_x_px,
+            ),
+            ImageTableModel.Column(
+                header="Height [px]",
+                selector=lambda img: img.size_y_px,
+            ),
+            ImageTableModel.Column(
+                header="Depth [px]",
+                selector=lambda img: img.size_z_px,
+            ),
+            ImageTableModel.Column(
+                header="Dimension order",
+                selector=lambda img: img.dimension_order,
+                validator=lambda img: (
+                    img.dimension_order == images.consensus.dimension_order
+                ),
+            ),
+            ImageTableModel.Column(
+                header="Pixel size (X)",
+                selector=lambda img: img.pixel_size_x or "unknown",
+                validator=lambda img: img.pixel_size_x == images.consensus.pixel_size_x,
+            ),
+            ImageTableModel.Column(
+                header="Pixel size (Y)",
+                selector=lambda img: img.pixel_size_y or "unknown",
+                validator=lambda img: img.pixel_size_y == images.consensus.pixel_size_y,
+            ),
+            ImageTableModel.Column(
+                header="Pixel size (Z)",
+                selector=lambda img: img.pixel_size_z or "unknown",
+                validator=lambda img: img.pixel_size_z == images.consensus.pixel_size_z,
+            ),
+            ImageTableModel.Column(
+                header="Channel names",
+                selector=lambda img: ", ".join(img.channel_names),
+                validator=(
+                    lambda img: img.channel_names == images.consensus.channel_names
+                ),
+            ),
+        ]
 
     def rowCount(
         self, parent: QModelIndex | QPersistentModelIndex | None = None
@@ -50,7 +107,7 @@ class ImageTableModel(QAbstractTableModel):
         self, parent: QModelIndex | QPersistentModelIndex | None = None
     ) -> int:
         assert parent is None or not parent.isValid()
-        return len(self._COLUMNS)
+        return len(self._columns)
 
     def data(
         self,
@@ -60,11 +117,18 @@ class ImageTableModel(QAbstractTableModel):
         if (
             index.isValid()
             and 0 <= index.row() < len(self._images)
-            and 0 <= index.column() < len(self._COLUMNS)
-            and role == Qt.ItemDataRole.DisplayRole
+            and 0 <= index.column() < len(self._columns)
         ):
             image = self._images[index.row()]
-            return self._COLUMNS[index.column()].getter(image)
+            column = self._columns[index.column()]
+            if role == Qt.ItemDataRole.DisplayRole:
+                return column.selector(image)
+            if (
+                role == Qt.ItemDataRole.BackgroundRole
+                and column.validator is not None
+                and not column.validator(image)
+            ):
+                return QColor(self.INVALID_COLOR)
         return None
 
     def headerData(
@@ -74,9 +138,9 @@ class ImageTableModel(QAbstractTableModel):
         role: int = Qt.ItemDataRole.DisplayRole,
     ) -> Any:
         if (
-            0 <= section < len(self._COLUMNS)
+            0 <= section < len(self._columns)
             and orientation == Qt.Orientation.Horizontal
             and role == Qt.ItemDataRole.DisplayRole
         ):
-            return self._COLUMNS[section].name
+            return self._columns[section].header
         return None

@@ -13,7 +13,6 @@ dependencies = [
     "aicsimageio[all]",
     "aicspylibczi",
     "fsspec",
-    "pydantic",
     "qtpy",
     "readlif",
 ]

@@ -2,7 +2,7 @@ from pydantic import BaseModel
 
 
 class Image(BaseModel):
-    filename: str
+    file: str
     scenes: list[str]
     n_timepoints: int
     n_channels: int

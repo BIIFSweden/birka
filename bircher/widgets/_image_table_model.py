@@ -1,11 +1,13 @@
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
 
 from qtpy.QtCore import (  # type: ignore
     QAbstractTableModel,
     QModelIndex,
     QObject,
+    QPersistentModelIndex,
     Qt,
 )
 
@@ -19,7 +21,7 @@ class ImageTableModel(QAbstractTableModel):
         getter: Callable[[Image], Any]
 
     _COLUMNS: list[Column] = [
-        Column("File", lambda image: image.filename),
+        Column("File", lambda image: Path(image.file).name),
         Column("Data type", lambda image: image.dtype),
         Column("Scenes", lambda image: len(image.scenes)),
         Column("Timepoints", lambda image: image.n_timepoints),
@@ -38,16 +40,22 @@ class ImageTableModel(QAbstractTableModel):
         super().__init__(parent)
         self._images: Sequence[Image] = images
 
-    def rowCount(self, parent: QModelIndex | None = None) -> int:
+    def rowCount(
+        self, parent: QModelIndex | QPersistentModelIndex | None = None
+    ) -> int:
         assert parent is None or not parent.isValid()
         return len(self._images)
 
-    def columnCount(self, parent: QModelIndex | None = None) -> int:
+    def columnCount(
+        self, parent: QModelIndex | QPersistentModelIndex | None = None
+    ) -> int:
         assert parent is None or not parent.isValid()
         return len(self._COLUMNS)
 
     def data(
-        self, index: QModelIndex, role: Qt.ItemDataRole = Qt.ItemDataRole.DisplayRole
+        self,
+        index: QModelIndex | QPersistentModelIndex,
+        role: int = Qt.ItemDataRole.DisplayRole,
     ) -> Any:
         if (
             index.isValid()
@@ -63,7 +71,7 @@ class ImageTableModel(QAbstractTableModel):
         self,
         section: int,
         orientation: Qt.Orientation,
-        role: Qt.ItemDataRole = Qt.ItemDataRole.DisplayRole,
+        role: int = Qt.ItemDataRole.DisplayRole,
     ) -> Any:
         if (
             0 <= section < len(self._COLUMNS)

@@ -9,7 +9,7 @@ from .models import Image
 def load_image(img_file: str | Path) -> Image:
     aics_img = AICSImage(img_file)
     return Image(
-        filename=Path(img_file).name,
+        file=str(Path(img_file).resolve()),
         scenes=list(aics_img.scenes),
         n_timepoints=aics_img.dims.T if "T" in aics_img.dims.order else 1,
         n_channels=aics_img.dims.C if "C" in aics_img.dims.order else 1,

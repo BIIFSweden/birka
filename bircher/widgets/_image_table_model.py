@@ -159,6 +159,17 @@ class ImageTableModel(QAbstractTableModel):
             return self._columns[section].header
         return None
 
+    def removeRows(
+        self,
+        row: int,
+        count: int,
+        parent: QModelIndex | QPersistentModelIndex | None = None,
+    ) -> bool:
+        assert parent is None or not parent.isValid()
+        for _ in range(count):
+            self._images.pop(row)
+        return True
+
     def set_file_name_pattern(self, pattern: Pattern[str] | None) -> None:
         self._file_name_pattern = pattern
         col = next(i for i, c in enumerate(self._columns) if c.header == "File")

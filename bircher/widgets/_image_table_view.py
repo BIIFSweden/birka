@@ -19,6 +19,7 @@ class ImageTableView(QTableView):
         self._images = images
         self.setAcceptDrops(True)
         self.setSortingEnabled(True)
+        self.setSelectionBehavior(QTableView.SelectionBehavior.SelectRows)
 
     def dragEnterEvent(self, event: QDragEnterEvent) -> None:
         if self._check_mime_data(event.mimeData()):

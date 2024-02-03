@@ -30,7 +30,7 @@ class ImageTableView(QTableView):
 
     def dropEvent(self, event: QDropEvent) -> None:
         if event.dropAction() == Qt.DropAction.CopyAction and self._check_mime_data(
-            event.mimeData()
+            event.mimeData(), check_files=True
         ):
             for url in event.mimeData().urls():
                 img_file = Path(url.toLocalFile())
@@ -43,10 +43,14 @@ class ImageTableView(QTableView):
                     )  # TODO show error to user
             event.accept()
 
-    def _check_mime_data(self, mime_data: QMimeData) -> bool:
-        return (
-            mime_data.hasUrls()
-            and all(url.isLocalFile() for url in mime_data.urls())
-            and all(Path(url.toLocalFile()).exists() for url in mime_data.urls())
-            and all(can_load_image(url.toLocalFile()) for url in mime_data.urls())
-        )
+    def _check_mime_data(self, mime_data: QMimeData, check_files: bool = False) -> bool:
+        if not mime_data.hasUrls() or any(
+            not url.isLocalFile() for url in mime_data.urls()
+        ):
+            return False
+        if check_files and (
+            any(not Path(url.toLocalFile()).exists() for url in mime_data.urls())
+            or any(not can_load_image(url.toLocalFile()) for url in mime_data.urls())
+        ):
+            return False
+        return True

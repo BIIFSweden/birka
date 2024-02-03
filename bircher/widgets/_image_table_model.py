@@ -18,12 +18,13 @@ from ._consensus_image_list import ConsensusImageList
 
 
 class ImageTableModel(QAbstractTableModel):
+    VALID_COLOR = Qt.GlobalColor.white
     INVALID_COLOR = Qt.GlobalColor.red
 
     @dataclass(frozen=True)
     class Column:
-        header: str
-        selector: Callable[[Image], Any]
+        header: str | None = None
+        selector: Callable[[Image], Any] | None = None
         validator: Callable[[Image], bool] | None = None
 
     def __init__(
@@ -134,14 +135,14 @@ class ImageTableModel(QAbstractTableModel):
         ):
             image = self._images[index.row()]
             column = self._columns[index.column()]
-            if role == Qt.ItemDataRole.DisplayRole:
+            if role == Qt.ItemDataRole.DisplayRole and column.selector is not None:
                 return column.selector(image)
-            if (
-                role == Qt.ItemDataRole.BackgroundRole
-                and column.validator is not None
-                and not column.validator(image)
-            ):
-                return QColor(self.INVALID_COLOR)
+            if role == Qt.ItemDataRole.BackgroundRole and column.validator is not None:
+                return (
+                    QColor(self.VALID_COLOR)
+                    if column.validator(image)
+                    else QColor(self.INVALID_COLOR)
+                )
         return None
 
     def headerData(

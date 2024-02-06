@@ -38,11 +38,14 @@ class ImageTableModel(QAbstractTableModel):
                 header="File",
                 selector=lambda img: Path(img.file).name,
                 validator=(
-                    lambda img: bool(
-                        self._file_name_pattern.fullmatch(Path(img.file).name)
+                    lambda img: (
+                        len([x for x in images if x.file == img.file]) == 1
+                        and (
+                            bool(self._file_name_pattern.fullmatch(Path(img.file).name))
+                            if self._file_name_pattern is not None
+                            else True
+                        )
                     )
-                    if self._file_name_pattern is not None
-                    else True
                 ),
             ),
             ImageTableModel.Column(
@@ -52,7 +55,7 @@ class ImageTableModel(QAbstractTableModel):
             ),
             ImageTableModel.Column(
                 header="Scenes",
-                selector=lambda img: len(img.scenes),
+                selector=lambda img: img.n_scenes,
             ),
             ImageTableModel.Column(
                 header="Timepoints",
@@ -158,17 +161,6 @@ class ImageTableModel(QAbstractTableModel):
         ):
             return self._columns[section].header
         return None
-
-    def removeRows(
-        self,
-        row: int,
-        count: int,
-        parent: QModelIndex | QPersistentModelIndex | None = None,
-    ) -> bool:
-        assert parent is None or not parent.isValid()
-        for _ in range(count):
-            self._images.pop(row)
-        return True
 
     def set_file_name_pattern(self, pattern: Pattern[str] | None) -> None:
         self._file_name_pattern = pattern

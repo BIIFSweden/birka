@@ -5,7 +5,7 @@ from dataclasses import dataclass
 class Image:
     file: str
     dtype: str
-    scenes: list[str]
+    n_scenes: int
     n_timepoints: int
     n_channels: int
     size_z_px: int
@@ -20,7 +20,7 @@ class Image:
     @property
     def is_timeseries(self) -> bool:
         return self.n_timepoints > 1
-    
+
     @property
     def is_zstack(self) -> bool:
         return self.size_z_px > 1

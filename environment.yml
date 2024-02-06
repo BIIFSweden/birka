@@ -10,6 +10,7 @@ dependencies:
       - aicsimageio[all]
       - aicspylibczi
       - fsspec
+      - pandas
       - pyside6-essentials
       - qtpy
       - readlif

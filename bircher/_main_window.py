@@ -67,7 +67,7 @@ class MainWindow(QMainWindow):
         regex_and_buttons_layout = QHBoxLayout()
         self._regex_line_edit = QLineEdit()
         self._regex_line_edit.setPlaceholderText(
-            "File name pattern (regular expression, optional)"
+            "POSIX file path pattern (Python regular expression, optional)"
         )
         self._regex_line_edit.textChanged.connect(self._on_regex_line_edit_text_changed)
         regex_and_buttons_layout.addWidget(self._regex_line_edit)
@@ -98,15 +98,15 @@ class MainWindow(QMainWindow):
     def _on_regex_line_edit_text_changed(self, text: str) -> None:
         if text:
             try:
-                file_name_pattern = re.compile(text)
+                posix_path_pattern = re.compile(text)
                 self._regex_line_edit.setStyleSheet("background-color: white")
             except re.error:
-                file_name_pattern = None
+                posix_path_pattern = None
                 self._regex_line_edit.setStyleSheet("background-color: red")
         else:
-            file_name_pattern = None
+            posix_path_pattern = None
             self._regex_line_edit.setStyleSheet("background-color: white")
-        self._image_table_model.set_file_name_pattern(file_name_pattern)
+        self._image_table_model.set_posix_path_pattern(posix_path_pattern)
 
     def _on_remove_selected_rows_button_clicked(self) -> None:
         for index in sorted(
@@ -157,7 +157,9 @@ class MainWindow(QMainWindow):
             and self._image_table_view.selectionModel().hasSelection()
         )
         self._create_archive_button.setEnabled(
-            self._thread is None and len(self._images) > 0
+            self._thread is None
+            and len(self._images) > 0
+            and len(set(img.posix_path for img in self._images)) == len(self._images)
         )
 
     @property

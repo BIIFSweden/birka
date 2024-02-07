@@ -1,6 +1,5 @@
 from collections.abc import Callable
 from dataclasses import dataclass
-from pathlib import Path
 from re import Pattern
 from typing import Any
 
@@ -20,6 +19,7 @@ from ._consensus_image_list import ConsensusImageList
 class ImageTableModel(QAbstractTableModel):
     VALID_COLOR = Qt.GlobalColor.white
     INVALID_COLOR = Qt.GlobalColor.red
+    FILE_COLUMN_INDEX = 0
 
     @dataclass(frozen=True)
     class Column:
@@ -32,22 +32,8 @@ class ImageTableModel(QAbstractTableModel):
     ) -> None:
         super().__init__(parent)
         self._images = images
-        self._file_name_pattern: Pattern[str] | None = None
-        self._columns: list[ImageTableModel.Column] = [
-            ImageTableModel.Column(
-                header="File",
-                selector=lambda img: Path(img.file).name,
-                validator=(
-                    lambda img: (
-                        len([x for x in images if x.file == img.file]) == 1
-                        and (
-                            bool(self._file_name_pattern.fullmatch(Path(img.file).name))
-                            if self._file_name_pattern is not None
-                            else True
-                        )
-                    )
-                ),
-            ),
+        self._posix_path_pattern: Pattern[str] | None = None
+        self._columns = [
             ImageTableModel.Column(
                 header="Data type",
                 selector=lambda img: img.dtype,
@@ -113,6 +99,27 @@ class ImageTableModel(QAbstractTableModel):
                 ),
             ),
         ]
+        self._columns.insert(
+            self.FILE_COLUMN_INDEX,
+            ImageTableModel.Column(
+                header="Image",
+                selector=lambda img: img.posix_path,
+                validator=(
+                    lambda img: (
+                        (
+                            bool(self._posix_path_pattern.fullmatch(img.posix_path))
+                            if self._posix_path_pattern is not None
+                            else True
+                        )
+                        and not any(
+                            other_img.posix_path == img.posix_path
+                            for other_img in images
+                            if other_img is not img
+                        )
+                    )
+                ),
+            ),
+        )
 
     def rowCount(
         self, parent: QModelIndex | QPersistentModelIndex | None = None
@@ -162,7 +169,9 @@ class ImageTableModel(QAbstractTableModel):
             return self._columns[section].header
         return None
 
-    def set_file_name_pattern(self, pattern: Pattern[str] | None) -> None:
-        self._file_name_pattern = pattern
-        col = next(i for i, c in enumerate(self._columns) if c.header == "File")
-        self.dataChanged.emit(self.index(0, col), self.index(self.rowCount() - 1, col))
+    def set_posix_path_pattern(self, pattern: Pattern[str] | None) -> None:
+        self._posix_path_pattern = pattern
+        self.dataChanged.emit(
+            self.index(0, self.FILE_COLUMN_INDEX),
+            self.index(self.rowCount() - 1, self.FILE_COLUMN_INDEX),
+        )

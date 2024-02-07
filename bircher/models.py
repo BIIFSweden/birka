@@ -3,7 +3,8 @@ from dataclasses import dataclass
 
 @dataclass(frozen=True)
 class Image:
-    file: str
+    orig_path: str
+    posix_path: str
     dtype: str
     n_scenes: int
     n_timepoints: int

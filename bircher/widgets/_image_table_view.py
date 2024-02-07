@@ -5,7 +5,7 @@ from qtpy.QtCore import QMimeData, Qt  # type: ignore
 from qtpy.QtGui import QDragEnterEvent, QDragMoveEvent, QDropEvent
 from qtpy.QtWidgets import QTableView, QWidget
 
-from ..utils import can_load_image, load_image
+from ..utils import can_load_images, load_images
 from ._consensus_image_list import ConsensusImageList
 
 log = logging.getLogger(__name__)
@@ -37,13 +37,12 @@ class ImageTableView(QTableView):
             event.mimeData(), check_files=True
         ):
             for url in event.mimeData().urls():
-                img_file = Path(url.toLocalFile())
+                img_file_or_dir = Path(url.toLocalFile())
                 try:
-                    img = load_image(img_file)
-                    self._images.append(img)
+                    self._images += load_images(img_file_or_dir)
                 except Exception as e:
                     log.error(
-                        f"Failed to load image {img_file}: {e}"
+                        f"Failed to load image(s) from {img_file_or_dir}: {e}"
                     )  # TODO show error to user
             event.accept()
 
@@ -54,7 +53,7 @@ class ImageTableView(QTableView):
             return False
         if check_files and (
             any(not Path(url.toLocalFile()).exists() for url in mime_data.urls())
-            or any(not can_load_image(url.toLocalFile()) for url in mime_data.urls())
+            or any(not can_load_images(url.toLocalFile()) for url in mime_data.urls())
         ):
             return False
         return True

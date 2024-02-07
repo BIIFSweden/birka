@@ -109,7 +109,7 @@ class ConsensusImageList(MutableSequence[Image]):
 
     def _find_consensus(self, key):
         counts = {}
-        for img in sorted(self._images, key=lambda img: img.file):
+        for img in sorted(self._images, key=lambda img: img.posix_path):
             value = key(img)
             if isinstance(value, list):
                 value = tuple(value)

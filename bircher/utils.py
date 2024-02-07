@@ -11,28 +11,44 @@ from aicsimageio.exceptions import UnsupportedFileFormatError
 from .models import Image
 
 
-def load_image(img_file: str | Path) -> Image:
-    aics_img = AICSImage(img_file)
-    return Image(
-        file=str(Path(img_file).resolve()),
-        n_scenes=len(aics_img.scenes),
-        n_timepoints=aics_img.dims.T if "T" in aics_img.dims.order else 1,
-        n_channels=aics_img.dims.C if "C" in aics_img.dims.order else 1,
-        size_z_px=aics_img.dims.Z if "Z" in aics_img.dims.order else 1,
-        size_y_px=aics_img.dims.Y if "Y" in aics_img.dims.order else 1,
-        size_x_px=aics_img.dims.X if "X" in aics_img.dims.order else 1,
-        dtype=aics_img.dtype.name,
-        dimension_order=aics_img.dims.order,
-        channel_names=list(aics_img.channel_names),
-        pixel_size_x=aics_img.physical_pixel_sizes[-1],
-        pixel_size_y=aics_img.physical_pixel_sizes[-2],
-        pixel_size_z=aics_img.physical_pixel_sizes[-3],
-    )
-
-
-def can_load_image(img_file: str | Path) -> bool:
+def load_images(path: str | Path, _base_path: Path | None = None) -> Sequence[Image]:
+    images = []
+    path = Path(path)
+    if _base_path is None:
+        _base_path = path.parent
+        assert _base_path.is_dir()
     try:
-        AICSImage.determine_reader(img_file)
+        aics_img = AICSImage(path)
+        img = Image(
+            orig_path=str(path),
+            posix_path=str(path.relative_to(_base_path).as_posix()),
+            n_scenes=len(aics_img.scenes),
+            n_timepoints=aics_img.dims.T if "T" in aics_img.dims.order else 1,
+            n_channels=aics_img.dims.C if "C" in aics_img.dims.order else 1,
+            size_z_px=aics_img.dims.Z if "Z" in aics_img.dims.order else 1,
+            size_y_px=aics_img.dims.Y if "Y" in aics_img.dims.order else 1,
+            size_x_px=aics_img.dims.X if "X" in aics_img.dims.order else 1,
+            dtype=aics_img.dtype.name,
+            dimension_order=aics_img.dims.order,
+            channel_names=list(aics_img.channel_names),
+            pixel_size_x=aics_img.physical_pixel_sizes[-1],
+            pixel_size_y=aics_img.physical_pixel_sizes[-2],
+            pixel_size_z=aics_img.physical_pixel_sizes[-3],
+        )
+        images.append(img)
+    except UnsupportedFileFormatError:
+        if path.is_dir():
+            for subpath in sorted(path.iterdir()):
+                images += load_images(subpath, _base_path=_base_path)
+    return images
+
+
+def can_load_images(path: str | Path) -> bool:
+    path = Path(path)
+    if path.is_dir():
+        return True
+    try:
+        AICSImage.determine_reader(path)
     except UnsupportedFileFormatError:
         return False
     return True
@@ -43,12 +59,12 @@ def write_archive(
 ) -> Generator[Image, None, None]:
     with tarfile.open(archive_file, mode="w:gz") as tar_file:
         for img in images:
-            tar_file.add(img.file, arcname=Path(img.file).name)
+            tar_file.add(img.orig_path, arcname=img.posix_path)
             yield img
         df = pd.DataFrame(
             data=[
                 {
-                    "file": Path(img.file).name,
+                    "image": img.posix_path,
                     "dtype": img.dtype,
                     "n_scenes": img.n_scenes,
                     "n_timepoints": img.n_timepoints,

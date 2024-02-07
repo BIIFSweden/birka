@@ -25,3 +25,15 @@ class Image:
     @property
     def is_zstack(self) -> bool:
         return self.size_z_px > 1
+
+    @property
+    def pixel_size_x_str(self) -> str | None:
+        return f"{self.pixel_size_x:.6f}" if self.pixel_size_x is not None else None
+
+    @property
+    def pixel_size_y_str(self) -> str | None:
+        return f"{self.pixel_size_y:.6f}" if self.pixel_size_y is not None else None
+
+    @property
+    def pixel_size_z_str(self) -> str | None:
+        return f"{self.pixel_size_z:.6f}" if self.pixel_size_z is not None else None

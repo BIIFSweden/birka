@@ -15,9 +15,9 @@ class ConsensusImageList(MutableSequence[Image]):
         is_zstack: bool
         n_channels: int
         dimension_order: str
-        pixel_size_x: float | None
-        pixel_size_y: float | None
-        pixel_size_z: float | None
+        pixel_size_x_str: str | None
+        pixel_size_y_str: str | None
+        pixel_size_z_str: str | None
         channel_names: list[str]
 
     _DEFAULT_CONSENSUS = Consensus(
@@ -26,9 +26,9 @@ class ConsensusImageList(MutableSequence[Image]):
         is_zstack=False,
         n_channels=1,
         dimension_order="TCZYX",
-        pixel_size_x=None,
-        pixel_size_y=None,
-        pixel_size_z=None,
+        pixel_size_x_str=None,
+        pixel_size_y_str=None,
+        pixel_size_z_str=None,
         channel_names=[],
     )
 
@@ -129,9 +129,9 @@ class ConsensusImageList(MutableSequence[Image]):
                 is_zstack=self._find_consensus(lambda img: img.is_zstack),
                 n_channels=self._find_consensus(lambda img: img.n_channels),
                 dimension_order=self._find_consensus(lambda img: img.dimension_order),
-                pixel_size_x=self._find_consensus(lambda img: img.pixel_size_x),
-                pixel_size_y=self._find_consensus(lambda img: img.pixel_size_y),
-                pixel_size_z=self._find_consensus(lambda img: img.pixel_size_z),
+                pixel_size_x_str=self._find_consensus(lambda img: img.pixel_size_x_str),
+                pixel_size_y_str=self._find_consensus(lambda img: img.pixel_size_y_str),
+                pixel_size_z_str=self._find_consensus(lambda img: img.pixel_size_z_str),
                 channel_names=self._find_consensus(lambda img: img.channel_names),
             )
         else:

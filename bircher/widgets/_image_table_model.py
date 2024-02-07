@@ -77,18 +77,24 @@ class ImageTableModel(QAbstractTableModel):
             ),
             ImageTableModel.Column(
                 header="Pixel size (X)",
-                selector=lambda img: img.pixel_size_x or "unknown",
-                validator=lambda img: img.pixel_size_x == images.consensus.pixel_size_x,
+                selector=lambda img: img.pixel_size_x_str or "unknown",
+                validator=lambda img: (
+                    img.pixel_size_x_str == images.consensus.pixel_size_x_str
+                ),
             ),
             ImageTableModel.Column(
                 header="Pixel size (Y)",
-                selector=lambda img: img.pixel_size_y or "unknown",
-                validator=lambda img: img.pixel_size_y == images.consensus.pixel_size_y,
+                selector=lambda img: img.pixel_size_y_str or "unknown",
+                validator=lambda img: (
+                    img.pixel_size_y_str == images.consensus.pixel_size_y_str
+                ),
             ),
             ImageTableModel.Column(
                 header="Pixel size (Z)",
-                selector=lambda img: img.pixel_size_z or "unknown",
-                validator=lambda img: img.pixel_size_z == images.consensus.pixel_size_z,
+                selector=lambda img: img.pixel_size_z_str or "unknown",
+                validator=lambda img: (
+                    img.pixel_size_z_str == images.consensus.pixel_size_z_str
+                ),
             ),
             ImageTableModel.Column(
                 header="Channel names",

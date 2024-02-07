@@ -3,6 +3,7 @@ from collections.abc import Generator, Sequence
 from io import BytesIO
 from pathlib import Path
 from tarfile import TarInfo
+from tempfile import TemporaryDirectory
 
 import pandas as pd
 from aicsimageio import AICSImage
@@ -55,16 +56,33 @@ def can_load_images(path: str | Path) -> bool:
 
 
 def write_archive(
-    archive_file: str | Path, images: Sequence[Image]
+    archive_file: str | Path,
+    images: Sequence[Image],
+    ome_tiff: bool = False,
+    compresslevel: int = 9,
 ) -> Generator[Image, None, None]:
-    with tarfile.open(archive_file, mode="w:gz") as tar_file:
+    with tarfile.open(
+        archive_file, mode="w:gz", compresslevel=compresslevel
+    ) as tar_file:
         for img in images:
-            tar_file.add(img.orig_path, arcname=img.posix_path)
+            if ome_tiff:
+                aics_img = AICSImage(img.orig_path)
+                with TemporaryDirectory() as temp_dir:
+                    img_file = Path(temp_dir) / f"{Path(img.orig_path).stem}.ome.tiff"
+                    posix_path = str(Path(img.posix_path).with_suffix(".ome.tiff"))
+                    aics_img.save(img_file)
+                    tar_file.add(img_file, arcname=posix_path)
+            else:
+                tar_file.add(img.orig_path, arcname=img.posix_path)
             yield img
         df = pd.DataFrame(
             data=[
                 {
-                    "image": img.posix_path,
+                    "image": (
+                        img.posix_path
+                        if not ome_tiff
+                        else str(Path(img.posix_path).with_suffix(".ome.tiff"))
+                    ),
                     "dtype": img.dtype,
                     "n_scenes": img.n_scenes,
                     "n_timepoints": img.n_timepoints,
@@ -82,7 +100,7 @@ def write_archive(
             ]
         )
         data = df.to_csv(index=False).encode()
-        with BytesIO(data) as f:
+        with BytesIO(data) as buf:
             tar_info = TarInfo(name="images.csv")
             tar_info.size = len(data)
-            tar_file.addfile(tar_info, fileobj=f)
+            tar_file.addfile(tar_info, fileobj=buf)

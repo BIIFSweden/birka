@@ -2,14 +2,16 @@ import re
 from collections.abc import Sequence
 from pathlib import Path
 
-from qtpy.QtCore import QObject, QThread, Signal
+from qtpy.QtCore import QObject, Qt, QThread, Signal
 from qtpy.QtWidgets import (
     QFileDialog,
     QHBoxLayout,
+    QLabel,
     QLineEdit,
     QMainWindow,
     QProgressBar,
     QPushButton,
+    QSpinBox,
     QStatusBar,
     QVBoxLayout,
     QWidget,
@@ -22,6 +24,8 @@ from .widgets import ConsensusImageList, ImageTableModel, ImageTableView
 
 class MainWindow(QMainWindow):
     class ArchiveWriterThread(QThread):
+        DEFAULT_COMPRESSLEVEL = 5
+
         step = Signal(int, Image)
         completed = Signal()
         error = Signal(Exception)
@@ -30,15 +34,24 @@ class MainWindow(QMainWindow):
             self,
             archive_file: str | Path,
             images: Sequence[Image],
+            ome_tiff: bool = False,
+            compresslevel: int = DEFAULT_COMPRESSLEVEL,
             parent: QObject | None = None,
         ) -> None:
             super().__init__(parent)
             self._archive_file = archive_file
             self._images = images
+            self._ome_tiff = ome_tiff
+            self._compresslevel = compresslevel
 
         def run(self) -> None:
             try:
-                archive_writer = write_archive(self._archive_file, self._images)
+                archive_writer = write_archive(
+                    self._archive_file,
+                    self._images,
+                    ome_tiff=self._ome_tiff,
+                    compresslevel=self._compresslevel,
+                )
                 for i, img in enumerate(archive_writer):
                     self.step.emit(i, img)
                 self.completed.emit()
@@ -50,6 +63,22 @@ class MainWindow(QMainWindow):
         self._thread: MainWindow.ArchiveWriterThread | None = None
         central_widget = QWidget()
         central_widget_layout = QVBoxLayout()
+        edit_widget = QWidget()
+        edit_widget_layout = QHBoxLayout()
+        self._regex_line_edit = QLineEdit()
+        self._regex_line_edit.setPlaceholderText(
+            "POSIX file path pattern (Python regular expression, optional)"
+        )
+        self._regex_line_edit.textChanged.connect(self._on_regex_line_edit_text_changed)
+        edit_widget_layout.addWidget(self._regex_line_edit)
+        edit_widget_layout.addStretch()
+        self._remove_selected_rows_button = QPushButton("Remove selected rows")
+        self._remove_selected_rows_button.clicked.connect(
+            self._on_remove_selected_rows_button_clicked
+        )
+        edit_widget_layout.addWidget(self._remove_selected_rows_button)
+        edit_widget.setLayout(edit_widget_layout)
+        central_widget_layout.addWidget(edit_widget)
         self._images = ConsensusImageList()
         self._image_table_model = ImageTableModel(self._images)
         self._image_table_model.modelReset.connect(lambda: self._update_button_states())
@@ -63,26 +92,28 @@ class MainWindow(QMainWindow):
             lambda selected, deselected: self._update_button_states()
         )
         central_widget_layout.addWidget(self._image_table_view)
-        regex_and_buttons_widget = QWidget()
-        regex_and_buttons_layout = QHBoxLayout()
-        self._regex_line_edit = QLineEdit()
-        self._regex_line_edit.setPlaceholderText(
-            "POSIX file path pattern (Python regular expression, optional)"
+        actions_widget = QWidget()
+        actions_widget_layout = QHBoxLayout()
+        actions_widget_layout.setAlignment(Qt.AlignmentFlag.AlignRight)
+        self._compresslevel_label = QLabel("Compression level (1=fastest, 9=smallest):")
+        actions_widget_layout.addWidget(self._compresslevel_label)
+        self._compresslevel_spin_box = QSpinBox()
+        self._compresslevel_spin_box.setRange(1, 9)
+        self._compresslevel_spin_box.setValue(
+            MainWindow.ArchiveWriterThread.DEFAULT_COMPRESSLEVEL
         )
-        self._regex_line_edit.textChanged.connect(self._on_regex_line_edit_text_changed)
-        regex_and_buttons_layout.addWidget(self._regex_line_edit)
-        self._remove_selected_rows_button = QPushButton("Remove selected rows")
-        self._remove_selected_rows_button.clicked.connect(
-            self._on_remove_selected_rows_button_clicked
+        actions_widget_layout.addWidget(self._compresslevel_spin_box)
+        actions_widget_layout.addStretch()
+        self._convert_and_archive_button = QPushButton("Convert to OME-TIFF && archive")
+        self._convert_and_archive_button.clicked.connect(
+            self._on_convert_and_archive_button_clicked
         )
-        regex_and_buttons_layout.addWidget(self._remove_selected_rows_button)
-        self._create_archive_button = QPushButton("Create archive")
-        self._create_archive_button.clicked.connect(
-            self._on_create_archive_button_clicked
-        )
-        regex_and_buttons_layout.addWidget(self._create_archive_button)
-        regex_and_buttons_widget.setLayout(regex_and_buttons_layout)
-        central_widget_layout.addWidget(regex_and_buttons_widget)
+        actions_widget_layout.addWidget(self._convert_and_archive_button)
+        self._archive_only_button = QPushButton("Archive only")
+        self._archive_only_button.clicked.connect(self._on_archive_only_button_clicked)
+        actions_widget_layout.addWidget(self._archive_only_button)
+        actions_widget.setLayout(actions_widget_layout)
+        central_widget_layout.addWidget(actions_widget)
         central_widget.setLayout(central_widget_layout)
         self.setCentralWidget(central_widget)
         self._status_bar = QStatusBar()
@@ -116,7 +147,13 @@ class MainWindow(QMainWindow):
         ):
             self._images.pop(index.row())
 
-    def _on_create_archive_button_clicked(self) -> None:
+    def _on_convert_and_archive_button_clicked(self) -> None:
+        self._create_archive(ome_tiff=True)
+
+    def _on_archive_only_button_clicked(self) -> None:
+        self._create_archive()
+
+    def _create_archive(self, ome_tiff: bool = False) -> None:
         archive_file, selected_filter = QFileDialog.getSaveFileName(
             parent=self,
             dir=str(Path.home() / "Untitled"),
@@ -124,7 +161,12 @@ class MainWindow(QMainWindow):
             selectedFilter="Image archive (*.tar.gz)",
         )
         if archive_file:
-            self._thread = MainWindow.ArchiveWriterThread(archive_file, self._images)
+            self._thread = MainWindow.ArchiveWriterThread(
+                archive_file,
+                self._images,
+                ome_tiff=ome_tiff,
+                compresslevel=self._compresslevel_spin_box.value(),
+            )
             self._update_button_states()
 
             @self._thread.step.connect
@@ -133,7 +175,7 @@ class MainWindow(QMainWindow):
 
             @self._thread.completed.connect
             def on_thread_completed():
-                self._status_bar.showMessage("Archive created")
+                self._status_bar.showMessage("Images archived")
                 self._progress_bar.setHidden(True)
                 self._thread = None
                 self._update_button_states()
@@ -145,7 +187,7 @@ class MainWindow(QMainWindow):
                 self._thread = None
                 self._update_button_states()
 
-            self._status_bar.showMessage("Creating archive...")
+            self._status_bar.showMessage("Archiving images...")
             self._progress_bar.setMaximum(len(self._images))
             self._progress_bar.setHidden(False)
             self._progress_bar.setValue(0)
@@ -156,7 +198,12 @@ class MainWindow(QMainWindow):
             self._thread is None
             and self._image_table_view.selectionModel().hasSelection()
         )
-        self._create_archive_button.setEnabled(
+        self._convert_and_archive_button.setEnabled(
+            self._thread is None
+            and len(self._images) > 0
+            and len(set(img.posix_path for img in self._images)) == len(self._images)
+        )
+        self._archive_only_button.setEnabled(
             self._thread is None
             and len(self._images) > 0
             and len(set(img.posix_path for img in self._images)) == len(self._images)

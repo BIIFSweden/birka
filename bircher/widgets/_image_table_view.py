@@ -41,9 +41,7 @@ class ImageTableView(QTableView):
                 try:
                     self._images += load_images(img_file_or_dir)
                 except Exception as e:
-                    log.error(
-                        f"Failed to load image(s) from {img_file_or_dir}: {e}"
-                    )  # TODO show error to user
+                    log.error(f"Failed to load image(s) from {img_file_or_dir}: {e}")
             event.accept()
 
     def _check_mime_data(self, mime_data: QMimeData, check_files: bool = False) -> bool:

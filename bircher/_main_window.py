@@ -24,8 +24,6 @@ from .widgets import ConsensusImageList, ImageTableModel, ImageTableView
 
 class MainWindow(QMainWindow):
     class ArchiveWriterThread(QThread):
-        DEFAULT_COMPRESSLEVEL = 5
-
         step = Signal(int, Image)
         completed = Signal()
         error = Signal(Exception)
@@ -35,7 +33,7 @@ class MainWindow(QMainWindow):
             archive_file: str | Path,
             images: Sequence[Image],
             ome_tiff: bool = False,
-            compresslevel: int = DEFAULT_COMPRESSLEVEL,
+            compresslevel: int = 5,
             parent: QObject | None = None,
         ) -> None:
             super().__init__(parent)
@@ -60,7 +58,7 @@ class MainWindow(QMainWindow):
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
-        self._thread: MainWindow.ArchiveWriterThread | None = None
+        self._archive_writer_thread: MainWindow.ArchiveWriterThread | None = None
         central_widget = QWidget()
         central_widget_layout = QVBoxLayout()
         edit_widget = QWidget()
@@ -101,9 +99,7 @@ class MainWindow(QMainWindow):
         actions_widget_layout.addWidget(self._compresslevel_label)
         self._compresslevel_spin_box = QSpinBox()
         self._compresslevel_spin_box.setRange(1, 9)
-        self._compresslevel_spin_box.setValue(
-            MainWindow.ArchiveWriterThread.DEFAULT_COMPRESSLEVEL
-        )
+        self._compresslevel_spin_box.setValue(5)
         actions_widget_layout.addWidget(self._compresslevel_spin_box)
         actions_widget_layout.addStretch()
         self._convert_and_archive_button = QPushButton("Convert to OME-TIFF && archive")
@@ -163,7 +159,7 @@ class MainWindow(QMainWindow):
             selectedFilter="Image archive (*.tar.gz)",
         )
         if archive_file:
-            self._thread = MainWindow.ArchiveWriterThread(
+            self._archive_writer_thread = MainWindow.ArchiveWriterThread(
                 archive_file,
                 self._images,
                 ome_tiff=ome_tiff,
@@ -171,46 +167,42 @@ class MainWindow(QMainWindow):
             )
             self._update_button_states()
 
-            @self._thread.step.connect
-            def on_thread_step(i, img):
+            @self._archive_writer_thread.step.connect
+            def on_archive_writer_thread_step(i, img):
                 self._progress_bar.setValue(i + 1)
 
-            @self._thread.completed.connect
-            def on_thread_completed():
+            @self._archive_writer_thread.completed.connect
+            def on_archive_writer_thread_completed():
                 self._status_bar.showMessage("Images archived")
                 self._progress_bar.setHidden(True)
-                self._thread = None
+                self._archive_writer_thread = None
                 self._update_button_states()
 
-            @self._thread.error.connect
-            def on_thread_error(e):
+            @self._archive_writer_thread.error.connect
+            def on_archive_writer_thread_error(e):
                 self._status_bar.showMessage(f"Error: {e}")
                 self._progress_bar.setHidden(True)
-                self._thread = None
+                self._archive_writer_thread = None
                 self._update_button_states()
 
             self._status_bar.showMessage("Archiving images...")
             self._progress_bar.setMaximum(len(self._images))
             self._progress_bar.setHidden(False)
             self._progress_bar.setValue(0)
-            self._thread.start()
+            self._archive_writer_thread.start()
 
     def _update_button_states(self) -> None:
         self._remove_selected_rows_button.setEnabled(
-            self._thread is None
+            self._archive_writer_thread is None
             and self._image_table_view.selectionModel().hasSelection()
         )
         self._convert_and_archive_button.setEnabled(
-            self._thread is None
+            self._archive_writer_thread is None
             and len(self._images) > 0
             and len(set(img.posix_path for img in self._images)) == len(self._images)
         )
         self._archive_only_button.setEnabled(
-            self._thread is None
+            self._archive_writer_thread is None
             and len(self._images) > 0
             and len(set(img.posix_path for img in self._images)) == len(self._images)
         )
-
-    @property
-    def image_table_model(self) -> ImageTableModel:
-        return self._image_table_model

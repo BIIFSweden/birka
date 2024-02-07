@@ -59,7 +59,7 @@ def write_archive(
     archive_file: str | Path,
     images: Sequence[Image],
     ome_tiff: bool = False,
-    compresslevel: int = 9,
+    compresslevel: int = 5,
 ) -> Generator[Image, None, None]:
     with tarfile.open(
         archive_file, mode="w:gz", compresslevel=compresslevel

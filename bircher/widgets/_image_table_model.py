@@ -17,10 +17,6 @@ from ._consensus_image_list import ConsensusImageList
 
 
 class ImageTableModel(QAbstractTableModel):
-    VALID_COLOR = Qt.GlobalColor.white
-    INVALID_COLOR = Qt.GlobalColor.red
-    FILE_COLUMN_INDEX = 0
-
     @dataclass(frozen=True)
     class Column:
         header: str | None = None
@@ -33,7 +29,24 @@ class ImageTableModel(QAbstractTableModel):
         super().__init__(parent)
         self._images = images
         self._posix_path_pattern: Pattern[str] | None = None
+        self._posix_path_column = ImageTableModel.Column(
+            header="Image",
+            selector=lambda img: img.posix_path,
+            validator=lambda img: (
+                (
+                    bool(self._posix_path_pattern.fullmatch(img.posix_path))
+                    if self._posix_path_pattern is not None
+                    else True
+                )
+                and not any(
+                    other_img.posix_path == img.posix_path
+                    for other_img in images
+                    if other_img is not img
+                )
+            ),
+        )
         self._columns = [
+            self._posix_path_column,
             ImageTableModel.Column(
                 header="Data type",
                 selector=lambda img: img.dtype,
@@ -99,33 +112,11 @@ class ImageTableModel(QAbstractTableModel):
             ImageTableModel.Column(
                 header="Channel names",
                 selector=lambda img: ", ".join(img.channel_names),
-                validator=(
-                    lambda img: tuple(img.channel_names)
-                    == tuple(images.consensus.channel_names)
+                validator=lambda img: (
+                    tuple(img.channel_names) == tuple(images.consensus.channel_names)
                 ),
             ),
         ]
-        self._columns.insert(
-            self.FILE_COLUMN_INDEX,
-            ImageTableModel.Column(
-                header="Image",
-                selector=lambda img: img.posix_path,
-                validator=(
-                    lambda img: (
-                        (
-                            bool(self._posix_path_pattern.fullmatch(img.posix_path))
-                            if self._posix_path_pattern is not None
-                            else True
-                        )
-                        and not any(
-                            other_img.posix_path == img.posix_path
-                            for other_img in images
-                            if other_img is not img
-                        )
-                    )
-                ),
-            ),
-        )
 
     def rowCount(
         self, parent: QModelIndex | QPersistentModelIndex | None = None
@@ -155,13 +146,13 @@ class ImageTableModel(QAbstractTableModel):
                 return col.selector(img)
             if role == Qt.ItemDataRole.BackgroundRole and col.validator is not None:
                 return (
-                    QColor(self.VALID_COLOR)
+                    QColor(Qt.GlobalColor.white)
                     if col.validator(img)
-                    else QColor(self.INVALID_COLOR)
+                    else QColor(Qt.GlobalColor.red)
                 )
             if (
                 role == Qt.ItemDataRole.EditRole
-                and index.column() == self.FILE_COLUMN_INDEX
+                and index.column() == self._columns.index(self._posix_path_column)
             ):
                 return img.posix_path
         return None
@@ -175,7 +166,7 @@ class ImageTableModel(QAbstractTableModel):
         if (
             index.isValid()
             and 0 <= index.row() < len(self._images)
-            and index.column() == self.FILE_COLUMN_INDEX
+            and index.column() == self._columns.index(self._posix_path_column)
             and role == Qt.ItemDataRole.EditRole
         ):
             img = self._images[index.row()]
@@ -183,7 +174,7 @@ class ImageTableModel(QAbstractTableModel):
             self.dataChanged.emit(index, index)
             return True
         return super().setData(index, value, role)
-    
+
     def headerData(
         self,
         section: int,
@@ -200,13 +191,16 @@ class ImageTableModel(QAbstractTableModel):
 
     def flags(self, index: QModelIndex | QPersistentModelIndex) -> Qt.ItemFlag:
         flags = super().flags(index)
-        if index.isValid() and index.column() == self.FILE_COLUMN_INDEX:
+        if index.isValid() and index.column() == self._columns.index(
+            self._posix_path_column
+        ):
             flags |= Qt.ItemFlag.ItemIsEditable
         return flags
 
     def set_posix_path_pattern(self, pattern: Pattern[str] | None) -> None:
         self._posix_path_pattern = pattern
+        posix_path_col = self._columns.index(self._posix_path_column)
         self.dataChanged.emit(
-            self.index(0, self.FILE_COLUMN_INDEX),
-            self.index(self.rowCount() - 1, self.FILE_COLUMN_INDEX),
+            self.index(0, posix_path_col),
+            self.index(self.rowCount() - 1, posix_path_col),
         )

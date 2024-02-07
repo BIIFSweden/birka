@@ -68,8 +68,8 @@ def write_archive(
             if ome_tiff:
                 aics_img = AICSImage(img.orig_path)
                 with TemporaryDirectory() as temp_dir:
-                    img_file = Path(temp_dir) / f"{Path(img.orig_path).stem}.ome.tiff"
-                    posix_path = str(Path(img.posix_path).with_suffix(".ome.tiff"))
+                    img_file = Path(temp_dir) / f"{Path(img.orig_path).stem}.tiff"
+                    posix_path = str(Path(img.posix_path).with_suffix(".tiff"))
                     aics_img.save(img_file)
                     tar_file.add(img_file, arcname=posix_path)
             else:
@@ -81,7 +81,7 @@ def write_archive(
                     "image": (
                         img.posix_path
                         if not ome_tiff
-                        else str(Path(img.posix_path).with_suffix(".ome.tiff"))
+                        else str(Path(img.posix_path).with_suffix(".tiff"))
                     ),
                     "dtype": img.dtype,
                     "n_scenes": img.n_scenes,

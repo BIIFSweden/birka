@@ -149,18 +149,41 @@ class ImageTableModel(QAbstractTableModel):
             and 0 <= index.row() < len(self._images)
             and 0 <= index.column() < len(self._columns)
         ):
-            image = self._images[index.row()]
-            column = self._columns[index.column()]
-            if role == Qt.ItemDataRole.DisplayRole and column.selector is not None:
-                return column.selector(image)
-            if role == Qt.ItemDataRole.BackgroundRole and column.validator is not None:
+            img = self._images[index.row()]
+            col = self._columns[index.column()]
+            if role == Qt.ItemDataRole.DisplayRole and col.selector is not None:
+                return col.selector(img)
+            if role == Qt.ItemDataRole.BackgroundRole and col.validator is not None:
                 return (
                     QColor(self.VALID_COLOR)
-                    if column.validator(image)
+                    if col.validator(img)
                     else QColor(self.INVALID_COLOR)
                 )
+            if (
+                role == Qt.ItemDataRole.EditRole
+                and index.column() == self.FILE_COLUMN_INDEX
+            ):
+                return img.posix_path
         return None
 
+    def setData(
+        self,
+        index: QModelIndex | QPersistentModelIndex,
+        value: Any,
+        role: int = Qt.ItemDataRole.EditRole,
+    ) -> bool:
+        if (
+            index.isValid()
+            and 0 <= index.row() < len(self._images)
+            and index.column() == self.FILE_COLUMN_INDEX
+            and role == Qt.ItemDataRole.EditRole
+        ):
+            img = self._images[index.row()]
+            img.posix_path = str(value)
+            self.dataChanged.emit(index, index)
+            return True
+        return super().setData(index, value, role)
+    
     def headerData(
         self,
         section: int,
@@ -174,6 +197,12 @@ class ImageTableModel(QAbstractTableModel):
         ):
             return self._columns[section].header
         return None
+
+    def flags(self, index: QModelIndex | QPersistentModelIndex) -> Qt.ItemFlag:
+        flags = super().flags(index)
+        if index.isValid() and index.column() == self.FILE_COLUMN_INDEX:
+            flags |= Qt.ItemFlag.ItemIsEditable
+        return flags
 
     def set_posix_path_pattern(self, pattern: Pattern[str] | None) -> None:
         self._posix_path_pattern = pattern

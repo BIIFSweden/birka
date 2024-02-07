@@ -2,7 +2,7 @@ import re
 from collections.abc import Sequence
 from pathlib import Path
 
-from qtpy.QtCore import QObject, Qt, QThread, Signal
+from qtpy.QtCore import QObject, QSortFilterProxyModel, Qt, QThread, Signal
 from qtpy.QtWidgets import (
     QFileDialog,
     QHBoxLayout,
@@ -87,7 +87,9 @@ class MainWindow(QMainWindow):
         )
         self._images.set_model(self._image_table_model)
         self._image_table_view = ImageTableView(self._images)
-        self._image_table_view.setModel(self._image_table_model)
+        sorted_image_table_model = QSortFilterProxyModel()
+        sorted_image_table_model.setSourceModel(self._image_table_model)
+        self._image_table_view.setModel(sorted_image_table_model)
         self._image_table_view.selectionModel().selectionChanged.connect(
             lambda selected, deselected: self._update_button_states()
         )

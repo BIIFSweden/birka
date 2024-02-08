@@ -7,7 +7,6 @@ name = "bircher"
 description = "A tool for bioimage data validation and archival"
 readme = {file = "README.md", content-type = "text/markdown"}
 authors = [{name = "Jonas Windhager", email = "jonas@windhager.io"}]
-license = {file = "LICENSE"}
 requires-python = ">=3.10,<3.12"
 dependencies = [
     "aicsimageio[all]",
@@ -19,7 +18,7 @@ dependencies = [
 ]
 classifiers = [
     "Intended Audience :: Science/Research",
-    "License :: OSI Approved :: MIT License",
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
     "Operating System :: OS Independent",
 ]
 dynamic = ["version"]

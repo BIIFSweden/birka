@@ -1,9 +1,11 @@
 import re
+import sys
 from collections.abc import Sequence
 from pathlib import Path
 
 from qtpy.QtCore import QObject, QSortFilterProxyModel, Qt, QThread, Signal
 from qtpy.QtWidgets import (
+    QApplication,
     QFileDialog,
     QHBoxLayout,
     QLabel,
@@ -206,3 +208,10 @@ class MainWindow(QMainWindow):
             and len(self._images) > 0
             and len(set(img.posix_path for img in self._images)) == len(self._images)
         )
+
+
+def main():
+    app = QApplication(sys.argv)
+    window = MainWindow()
+    window.show()
+    app.exec()

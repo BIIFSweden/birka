@@ -1,4 +1,3 @@
-from ._application import Application
-from ._main_window import MainWindow
+from ._bircher import MainWindow, main
 
-__all__ = ["Application", "MainWindow"]
+__all__ = ["MainWindow", "main"]

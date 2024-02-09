@@ -21,7 +21,7 @@ classifiers = [
 dynamic = ["version"]
 
 [project.gui-scripts]
-bircher = "bircher.__main__:main"
+bircher = "bircher:main"
 
 [project.optional-dependencies]
 bioformats = ["bioformats-jar"]

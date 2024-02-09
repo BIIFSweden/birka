@@ -1,5 +1,5 @@
-# bircher
+# birka
 
-*The **B**io**I**mage A**rch**iv**er***
+*The BioImage Archiver*
 
-Bircher is a tool for bioimage data validation and archival
+Birka is a tool for bioimage data validation and archival

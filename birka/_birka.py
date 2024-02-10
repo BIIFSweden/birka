@@ -123,7 +123,7 @@ class MainWindow(QMainWindow):
         self._status_bar.addPermanentWidget(self._progress_bar)
         self.setStatusBar(self._status_bar)
         self.setGeometry(100, 100, 800, 600)
-        self.setWindowTitle("birka")
+        self.setWindowTitle("Birka")
         self._update_button_states()
 
     def _on_regex_line_edit_text_changed(self, text: str) -> None:

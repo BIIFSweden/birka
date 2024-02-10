@@ -1,4 +1,4 @@
-# birka
+# Birka
 
 *The BioImage Archiver*
 

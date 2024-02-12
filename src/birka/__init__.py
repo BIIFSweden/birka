@@ -1,3 +1,3 @@
-from ._birka import MainWindow, main
+from ._birka import MainWindow
 
-__all__ = ["MainWindow", "main"]
+__all__ = ["MainWindow"]

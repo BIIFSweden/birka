@@ -21,7 +21,7 @@ classifiers = [
 dynamic = ["version"]
 
 [project.gui-scripts]
-birka = "birka:main"
+birka = "birka.__main__:main"
 
 [project.optional-dependencies]
 bioformats = ["bioformats-jar"]
